@@ -1,0 +1,100 @@
+# Import data
+import pandas as pd
+df = pd.read_excel("GSE24427 Dataset 5.xlsx")
+
+# Define inputs and output
+from sklearn.preprocessing import LabelEncoder
+X = df.iloc[:, :-1].values
+y = df.iloc[:, -1].values
+le = LabelEncoder()
+y = le.fit_transform(y)
+le.classes_
+le.transform(['high', 'low', 'medium'])
+
+# Plot data
+import seaborn as sns
+import matplotlib.pyplot as plt
+plt.figure(figsize=(17, 12))
+plt.subplot(331)
+sns.scatterplot(data=df, x=df.iloc[0:24, 0], y=df.iloc[0:24, 20], hue='Responder')
+plt.subplot(332)
+sns.scatterplot(data=df, x=df.iloc[0:24, 1], y=df.iloc[0:24, 21], hue='Responder')
+plt.subplot(333)
+sns.scatterplot(data=df, x=df.iloc[0:24, 2], y=df.iloc[0:24, 22], hue='Responder')
+plt.subplot(334)
+sns.scatterplot(data=df, x=df.iloc[0:24, 3], y=df.iloc[0:24, 23], hue='Responder')
+plt.subplot(335)
+sns.scatterplot(data=df, x=df.iloc[0:24, 4], y=df.iloc[0:24, 24], hue='Responder')
+
+#Spli data into training and testing
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = \
+    train_test_split(X, y, 
+                     test_size=0.20,
+                     stratify=y,
+                     random_state=1)
+                     
+# Define teh pipeline prediction model
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.svm import SVC
+from sklearn.pipeline import make_pipeline
+
+n_components = range(1, 10)
+scores_1 = []
+for n in n_components:
+    pipe_svc = make_pipeline(StandardScaler(),
+                        PCA(n_components=n),
+                        SVC(C=1.0, 
+                            kernel='sigmoid',
+                            gamma='auto', # if ‘auto’, uses 1 / n_features
+                            random_state=1))
+    pipe_svc.fit(X_train, y_train)
+    y_pred = pipe_svc.predict(X_test)
+    scores_1.append(pipe_svc.score(X_test, y_test))
+
+# Plot the optimal n_components for PCA
+plt.plot(n_components, scores_1, 'r--')
+plt.xlabel('Value of n_components for PCA')
+plt.ylabel('Testing Accuracy')
+
+# Evaluate the model for n_components=2
+pipe_svc = make_pipeline(StandardScaler(),
+                        PCA(n_components=2),
+                        SVC(C=1.0, 
+                            kernel='sigmoid',
+                            gamma='auto', # if ‘auto’, uses 1 / n_features
+                            random_state=1))
+pipe_svc.fit(X_train, y_train)
+y_pred = pipe_svc.predict(X_test)
+print('Test Accuracy: %.3f' % pipe_svc.score(X_test, y_test))
+
+# Performance evaluation
+import numpy as np
+from sklearn.model_selection import StratifiedKFold
+kfold = StratifiedKFold(n_splits=7).split(X_train, y_train)
+scores_2 = []
+for k, (train, test) in enumerate(kfold):
+    pipe_svc.fit(X_train[train], y_train[train])
+    score = pipe_svc.score(X_train[test], y_train[test])
+    scores_2.append(score)
+    print('Fold: %2d, Class dist.: %s, Acc: %.3f' % (k+1,
+          np.bincount(y_train[train]), score))
+print('\nCV accuracy: %.3f +/- %.3f' % (np.mean(scores_2), np.std(scores_2)))
+
+# Compute confusion matrix
+from sklearn.metrics import confusion_matrix
+pipe_svc.fit(X_train, y_train)
+y_pred = pipe_svc.predict(X_test)
+confmat = confusion_matrix(y_true=y_test, y_pred=y_pred)
+
+fig, ax = plt.subplots()
+ax.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
+for i in range(confmat.shape[0]):
+    for j in range(confmat.shape[1]):
+        ax.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
+
+plt.xlabel('Predicted label')
+plt.ylabel('True label')
+plt.tight_layout()
+plt.show()
