@@ -71,7 +71,7 @@ pipe_mlp.fit(X_train, y_train)
 y_pred = pipe_mlp.predict(X_test)
 print('Test Accuracy: %.3f' % pipe_mlp.score(X_test, y_test))
 
-# Performance evaluation
+# Performance evaluation for 8 folds
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
 kfold = StratifiedKFold(n_splits=8).split(X_train, y_train)
