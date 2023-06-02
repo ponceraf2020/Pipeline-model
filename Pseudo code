@@ -26,7 +26,7 @@ sns.scatterplot(data=df, x=df.iloc[0:24, 3], y=df.iloc[0:24, 23], hue='Responder
 plt.subplot(335)
 sns.scatterplot(data=df, x=df.iloc[0:24, 4], y=df.iloc[0:24, 24], hue='Responder')
 
-#Spli data into training and testing
+#Split data into training and testing
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = \
     train_test_split(X, y, 
