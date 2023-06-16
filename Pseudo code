@@ -40,7 +40,7 @@ from sklearn.decomposition import PCA
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import make_pipeline
 
-n_components = range(1, 15)
+n_components = range(1, 20)
 scores_pipe = []
 for n in n_components:
     pipe_mlp = make_pipeline(StandardScaler(),
