@@ -11,7 +11,7 @@ y = le.fit_transform(y)
 le.classes_
 le.transform(['high', 'low', 'medium'])
 
-# Plot data
+# Plot gene data
 import seaborn as sns
 import matplotlib.pyplot as plt
 plt.figure(figsize=(17, 12))
