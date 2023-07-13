@@ -1,6 +1,6 @@
 # Import data
 import pandas as pd
-df = pd.read_excel("GSE24427 Dataset 5.xlsx")
+df = pd.read_excel("GSE24427 Experiment.xlsx")
 
 # Define inputs and output
 from sklearn.preprocessing import LabelEncoder
@@ -11,28 +11,41 @@ y = le.fit_transform(y)
 le.classes_
 le.transform(['high', 'low', 'medium'])
 
-# Plot gene data
-import seaborn as sns
-import matplotlib.pyplot as plt
-plt.figure(figsize=(17, 12))
-plt.subplot(331)
-sns.scatterplot(data=df, x=df.iloc[0:24, 0], y=df.iloc[0:24, 20], hue='Responder')
-plt.subplot(332)
-sns.scatterplot(data=df, x=df.iloc[0:24, 1], y=df.iloc[0:24, 21], hue='Responder')
-plt.subplot(333)
-sns.scatterplot(data=df, x=df.iloc[0:24, 2], y=df.iloc[0:24, 22], hue='Responder')
-plt.subplot(334)
-sns.scatterplot(data=df, x=df.iloc[0:24, 3], y=df.iloc[0:24, 23], hue='Responder')
-plt.subplot(335)
-sns.scatterplot(data=df, x=df.iloc[0:24, 4], y=df.iloc[0:24, 24], hue='Responder')
-
-#Split data into training and testing
+# Split data into training and testing
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = \
     train_test_split(X, y, 
                      test_size=0.20,
                      stratify=y,
                      random_state=1)
+
+# Standardize data
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+X_train_std = scaler.fit_transform(X_train)
+X_test_std = scaler.transform(X_test)
+
+# Build the covariance matrix
+import numpy as np
+cov_mat = np.cov(X_train_std.T)
+eigen_vals, eigen_vecs = np.linalg.eig(cov_mat)
+print('\nEigenvalues \n%s' % eigen_vals)
+
+# Compute the explained variance ratio
+tot = sum(eigen_vals)
+var_exp = [(i / tot) for i in sorted(eigen_vals, reverse=True)]
+cum_var_exp = np.cumsum(var_exp)
+
+import matplotlib.pyplot as plt
+plt.bar(range(0, 75), var_exp, alpha=0.1, align='center',
+        label='Individual explained variance')
+plt.step(range(0, 75), cum_var_exp, where='mid',
+         label='Cumulative explained variance')
+plt.ylabel('Explained variance ratio')
+plt.xlabel('Principal component index')
+plt.legend(loc='center right')
+plt.tight_layout()
+plt.show()
                      
 # Define teh pipeline prediction model
 from sklearn.preprocessing import StandardScaler
@@ -46,8 +59,8 @@ for n in n_components:
     pipe_mlp = make_pipeline(StandardScaler(),
                         PCA(n_components=n),
                         MLPClassifier(
-                                    solver="adam",
-                                    activation='relu',
+                                    solver="sgd",
+                                    activation='tanh',
                                     random_state=1,
                                     learning_rate_init=0.01))
     pipe_mlp.fit(X_train, y_train)
@@ -59,12 +72,12 @@ plt.plot(n_components, scores_pipe, 'r--')
 plt.xlabel('Value of n_components for PCA')
 plt.ylabel('Testing Accuracy')
 
-# Evaluate the model for n_components=10
+# Evaluate the model for n_components=13
 pipe_mlp = make_pipeline(StandardScaler(),
-                        PCA(n_components=10),
+                        PCA(n_components=13),
                         MLPClassifier(
-                                    solver="adam",
-                                    activation='relu',
+                                    solver="sgd",
+                                    activation='tanh',
                                     random_state=1,
                                     learning_rate_init=0.01))
 pipe_mlp.fit(X_train, y_train)
